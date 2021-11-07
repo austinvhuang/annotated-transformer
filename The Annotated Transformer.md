@@ -80,6 +80,8 @@ language modeling tasks.
 To the best of our knowledge, however, the Transformer is the first transduction model relying entirely on self-attention to compute representations of its input and output without using sequence aligned RNNs or convolution. 
 <!-- #endregion -->
 
+# Tutorial 1: Model Architecture
+
 <!-- #region id="pFrPajezTsqB" -->
 # Model Architecture
 <!-- #endregion -->
@@ -536,6 +538,39 @@ def make_model(src_vocab, tgt_vocab, N=6,
 # Small example model.
 tmp_model = make_model(10, 10, 2)
 ```
+
+## Inference: 
+
+> Here we make a forward step to generate a prediction of the model. We try to use our 
+transformer to memorize the input. As you will see the output is randomly generated due to the fact that the model
+is not trained yet. In the next tutorial we will build the training function and try to train our model to memorize
+the numbers from 1 to 10. 
+
+```python
+tmp_model.eval()
+src = torch.LongTensor([[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]])
+src_mask = torch.ones(1, 1, 10)
+
+memory = tmp_model.encode(src, src_mask)
+ys = torch.ones(1, 1).fill_(1).type_as(src)
+
+for i in range(10-1):
+    out = tmp_model.decode(memory, src_mask,
+                       ys,
+                       subsequent_mask(ys.size(1))
+                       .type_as(src.data))
+    prob = tmp_model.generator(out[:, -1])
+    _, next_word = torch.max(prob, dim=1)
+    next_word = next_word.data[0]
+    ys = torch.cat([ys,
+                    torch.ones(1, 1).type_as(src.data)
+                    .fill_(next_word)], dim=1)
+    
+print("Untrained Model Prediction",ys)
+
+```
+
+# Tutorial 2: Training 
 
 <!-- #region id="05s6oT9fTsqI" -->
 # Training
@@ -1012,6 +1047,8 @@ Make an iterator out of the dataloader and test sampling one batch.
 
 TODO: still need to replicate MyIterator logic which construct batches grouping together text of similar length
 <!-- #endregion -->
+
+# Tutorial 3: Multi-GPU Training
 
 <!-- #region tags=[] id="p9K8Ck3ookC_" -->
 ## Multi-GPU Training
